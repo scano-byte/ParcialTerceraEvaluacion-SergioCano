@@ -1,44 +1,51 @@
-public class Main {
-    public static void main(String[] args) {
-        MotorJuego motor = new MotorJuego();
-        GestorEntradas inputManager = new GestorEntradas();
+# Cyber Duel 2D - Motor de Videojuegos
 
-        // 1. Inicializar los dos jugadores con 200 de vida y armas diferenciadas.
-        // Formato entidad: Tipo, X, Y, W, H, Energía(HP), NombreArma, DañoArma
-        // Jugador 1 lleva una Espada de Plasma (Daño alto de cerca)
-        EntidadVideojuego jugador1 = new EntidadVideojuego("JUGADOR_1", 0, 0, 1, 1, 200, "Espada Plasma", 45) {};
-        // Jugador 2 lleva un Blaster Láser (Daño moderado)
-        EntidadVideojuego jugador2 = new EntidadVideojuego("JUGADOR_2", 6, 0, 1, 1, 200, "Blaster Láser", 30) {};
+## 1. Temática Elegida
+**Cyber Duel 2D** es un simulador por consola de la lógica interna de un videojuego de duelos por turnos en un plano 2D. Dos jugadores se enfrentan en una arena con **200 puntos de vida (HP)** cada uno. Cada personaje cuenta con un arma única equipada que inflige un daño diferenciado, obligando al sistema a calcular de manera matemática la distancia coordinada en el eje espacial antes de validar el impacto del ataque.
 
-        motor.añadirEntidad(jugador1);
-        motor.añadirEntidad(jugador2);
-        
-        // 2. Arrancar el motor de juego
-        motor.cambiarEstado(MotorJuego.EstadoJuego.JUGANDO);
+## 2. Arquitectura del Software
+Para respetar estrictamente el límite máximo de 6 clases y evitar la sobreingeniería, el sistema se ha estructurado en 4 clases altamente cohesionadas:
+* **EntidadVideojuego**: Clase base abstracta que encapsula los atributos espaciales ($x, y, w, h$), el estado de la energía/vida (`energia`) y las propiedades de las armas mediante encapsulación (`private`) con sus respectivos getters y setters.
+* **MotorJuego**: Clase cerebro encargada de controlar la máquina de estados del juego (MENU, JUGANDO, GAMEOVER), gestionar la lista de entidades y procesar la lógica avanzada del cálculo de distancias y decremento de vida.
+* **GestorEntradas**: Actúa como la capa controladora del motor, traduciendo cadenas de comandos de texto simulados ("MOVER_DERECHA", "ATACAR") en ejecuciones lógicas directas sobre las entidades.
+* **Main**: Clase conductora que orquesta la inicialización de la partida, simula el flujo del ciclo por turnos y muestra las salidas de log detalladas por la consola del sistema.
 
-        System.out.println("\n===== COMIENZA LA SIMULACIÓN DE COMBATE =====");
+## 3. Diagramas UML (Formato Mermaid)
 
-        // TURNO 1: El Jugador 1 intenta atacar desde lejos (Debe fallar)
-        inputManager.procesarComando("ATACAR", jugador1, jugador2, motor);
-
-        // TURNO 2: El Jugador 1 se acerca al Jugador 2
-        inputManager.procesarComando("MOVER_DERECHA", jugador1, jugador2, motor);
-        inputManager.procesarComando("MOVER_DERECHA", jugador1, jugador2, motor); // Ahora X del J1 es 4 (Distancia con J2 es 2)
-
-        // TURNO 3: El Jugador 1 ataca con éxito (Usa daño de Espada Plasma: 45)
-        inputManager.procesarComando("ATACAR", jugador1, jugador2, motor);
-
-        // TURNO 4: El Jugador 2 responde al ataque (Usa daño de Blaster Láser: 30)
-        inputManager.procesarComando("ATACAR", jugador2, jugador1, motor);
-
-        // TURNO 5: Intercambio crítico final simulado (Para comprobar cambio de estado)
-        System.out.println("\n===== SIMULACIÓN DE RONDAS CRÍTICAS CONTINUAS =====");
-        inputManager.procesarComando("ATACAR", jugador1, jugador2, motor); // J2 queda con 110 HP
-        inputManager.procesarComando("ATACAR", jugador1, jugador2, motor); // J2 queda con 65 HP
-        inputManager.procesarComando("ATACAR", jugador1, jugador2, motor); // J2 queda con 20 HP
-        inputManager.procesarComando("ATACAR", jugador1, jugador2, motor); // J2 queda con 0 HP -> Provoca GAMEOVER
-        
-        // Intento de acción posterior al fin del juego (Bloqueado)
-        inputManager.procesarComando("ATACAR", jugador2, jugador1, motor);
+### Diagrama de Clases
+```mermaid
+classDiagram
+    direction UT
+    class MotorJuego {
+        -EstadoJuego estadoActual
+        -List~EntidadVideojuego~ entidades
+        +cambiarEstado(EstadoJuego nuevoEstado) void
+        +añadirEntidad(EntidadVideojuego e) void
+        +actualizar() void
+        +ejecutarAtaque(EntidadVideojuego atacante, EntidadVideojuego objetivo) void
     }
-}
+    class EntidadVideojuego {
+        -int x
+        -int y
+        -int w
+        -int h
+        -String tipo
+        -int energia
+        -String armaEquipada
+        -int dañoArma
+        +mover(int dx, int dy) void
+        +getX() int
+        +getY() int
+        +getEnergia() int
+        +setEnergia(int energia) void
+    }
+    class GestorEntradas {
+        +procesarComando(String comando, EntidadVideojuego jugador, EntidadVideojuego enemigo, MotorJuego motor) void
+    }
+    class Main {
+        +main(String[] args) void
+    }
+
+    Main --> MotorJuego : inicializa
+    Main --> GestorEntradas : invoca
+    MotorJuego --> EntidadVideojuego : administra
